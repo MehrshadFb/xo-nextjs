@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Comico";
+  src: url("/fonts/Comico-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7ead3;
+  --foreground: #24160d;
+  --cream: #fff6df;
+  --wood: #9a5a2c;
+  --wood-dark: #5f351c;
+  --teal: #1f7a71;
+  --rose: #b34a5a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Comico", ui-rounded, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Comico", ui-rounded, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: #c7f2e9;
+  color: var(--foreground);
+}
+
+.wood-page {
+  background: linear-gradient(180deg, #fff6df, #f1d8b2);
+}
+
+.wood-panel {
+  border: 2px solid rgba(95, 53, 28, 0.32);
+  background: #fff6df;
+  box-shadow: 0 10px 24px rgba(95, 53, 28, 0.12);
+}
+
+.wood-board {
+  background: transparent;
+}
+
+.wood-cell {
+  border: 2px solid rgba(95, 53, 28, 0.45);
+  background: #c88343;
+  box-shadow: 0 8px 16px rgba(95, 53, 28, 0.12);
+}
+
+.wood-cell-empty:hover {
+  background: #d59654;
+}
+
+.mark-x {
+  color: #4a2815;
+  text-shadow: 0 6px 0 #f0bf78;
+}
+
+.mark-o {
+  color: #fff0c7;
+  text-shadow: 0 6px 0 #6f3a1d;
+}
+
+.game-mark {
+  display: block;
+  font-size: clamp(4.75rem, 18vw, 9.5rem);
+  line-height: 0.8;
+  transform: translateY(-0.02em) scale(1.08);
+}
+
+.mark-o .game-mark {
+  transform: translateY(-0.02em) scale(1.18);
 }

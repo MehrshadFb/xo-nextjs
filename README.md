@@ -38,3 +38,16 @@ npm run check
 ```
 
 This runs linting and a production build, matching the GitHub Actions CI workflow.
+
+## Project Shape
+
+```text
+src/app
+  App Router pages and global styles
+src/components
+  Small UI components for the lobby and game room
+src/lib
+  Shared frontend types and helpers
+public/fonts
+  Comico web font
+```
