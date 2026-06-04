@@ -2,12 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { createPreviewSession, saveGameSession } from "@/lib/session";
 
 type LobbyMode = "create" | "join";
-
-function makePreviewCode() {
-  return Math.random().toString(36).slice(2, 6).toUpperCase();
-}
 
 export function LobbyForm() {
   const router = useRouter();
@@ -18,16 +15,20 @@ export function LobbyForm() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (mode === "create") {
-      router.push(`/game/WOOD-${makePreviewCode()}`);
+    const code = joinCode.trim().replace(/\s+/g, "-").toUpperCase();
+
+    if (mode === "join" && !code) {
       return;
     }
 
-    const code = joinCode.trim().replace(/\s+/g, "-").toUpperCase();
+    const session = createPreviewSession({
+      displayName,
+      mode,
+      joinCode: code,
+    });
 
-    if (code) {
-      router.push(`/game/${encodeURIComponent(code)}`);
-    }
+    saveGameSession(session);
+    router.push(`/game/${encodeURIComponent(session.gameId)}`);
   }
 
   return (

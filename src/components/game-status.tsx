@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { GameState, markLabel, statusLabel } from "@/lib/game";
+import { clearGameSession, GameSession } from "@/lib/session";
 
 type GameStatusProps = {
   game: GameState;
+  session: GameSession | null;
 };
 
-export function GameStatus({ game }: GameStatusProps) {
+export function GameStatus({ game, session }: GameStatusProps) {
   return (
     <section className="wood-panel rounded-xl p-4 sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -18,13 +20,14 @@ export function GameStatus({ game }: GameStatusProps) {
 
         <Link
           href="/"
+          onClick={clearGameSession}
           className="w-fit rounded-lg border-2 border-[#5f351c]/35 bg-[#fff6df] px-4 py-2 text-sm font-black text-[#5f351c] transition hover:border-[#5f351c]"
         >
           New game
         </Link>
       </div>
 
-      <dl className="mt-5 grid gap-3 border-t-2 border-[#5f351c]/20 pt-4 text-sm text-[#5f351c] sm:grid-cols-3">
+      <dl className="mt-5 grid gap-3 border-t-2 border-[#5f351c]/20 pt-4 text-sm text-[#5f351c] sm:grid-cols-4">
         <div>
           <dt>Status</dt>
           <dd className="mt-1 font-black text-[#24160d]">
@@ -42,6 +45,14 @@ export function GameStatus({ game }: GameStatusProps) {
           <dd className="mt-1 font-black text-[#24160d]">
             {game.playerX.displayName} vs{" "}
             {game.playerO?.displayName ?? "Waiting"}
+          </dd>
+        </div>
+        <div>
+          <dt>You</dt>
+          <dd className="mt-1 font-black text-[#24160d]">
+            {session
+              ? `${session.displayName} (${markLabel(session.playerMark)})`
+              : "Preview"}
           </dd>
         </div>
       </dl>

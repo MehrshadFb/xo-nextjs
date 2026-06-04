@@ -1,6 +1,6 @@
 export type Mark = "empty" | "x" | "o";
 
-export type GameStatus = "waiting" | "in_progress" | "finished";
+export type GameStatus = "waiting" | "in_progress" | "finished" | "aborted";
 
 export type Player = {
   displayName: string;
@@ -55,6 +55,7 @@ export function statusLabel(status: GameStatus) {
     waiting: "Waiting",
     in_progress: "In progress",
     finished: "Finished",
+    aborted: "Aborted",
   };
 
   return labels[status];
