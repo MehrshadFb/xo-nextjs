@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { createPreviewSession, saveGameSession } from "@/lib/session";
+import { createGame, joinGame } from "@/lib/api";
+import { createGameSession, saveGameSession } from "@/lib/session";
 
 type LobbyMode = "create" | "join";
 
@@ -11,24 +12,45 @@ export function LobbyForm() {
   const [mode, setMode] = useState<LobbyMode>("create");
   const [displayName, setDisplayName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
 
     const code = joinCode.trim().replace(/\s+/g, "-").toUpperCase();
 
     if (mode === "join" && !code) {
+      setError("Enter a join code.");
       return;
     }
 
-    const session = createPreviewSession({
-      displayName,
-      mode,
-      joinCode: code,
-    });
+    setIsSubmitting(true);
 
-    saveGameSession(session);
-    router.push(`/game/${encodeURIComponent(session.gameId)}`);
+    try {
+      const result =
+        mode === "create"
+          ? await createGame(displayName)
+          : await joinGame(code, displayName);
+      const session = createGameSession({
+        state: result.state,
+        displayName,
+        playerToken: result.playerToken,
+        playerMark: result.playerMark,
+      });
+
+      saveGameSession(session);
+      router.push(`/game/${encodeURIComponent(session.gameId)}`);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to start game.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -37,6 +59,7 @@ export function LobbyForm() {
         <button
           type="button"
           onClick={() => setMode("create")}
+          disabled={isSubmitting}
           className={[
             "h-12 rounded-lg border-2 px-4 text-base font-black transition",
             mode === "create"
@@ -49,6 +72,7 @@ export function LobbyForm() {
         <button
           type="button"
           onClick={() => setMode("join")}
+          disabled={isSubmitting}
           className={[
             "h-12 rounded-lg border-2 px-4 text-base font-black transition",
             mode === "join"
@@ -92,10 +116,19 @@ export function LobbyForm() {
 
       <button
         type="submit"
+        disabled={isSubmitting}
         className="mt-5 h-12 w-full rounded-lg border-2 border-[#5f351c] bg-[#5f351c] px-4 text-base font-black text-[#fff6df] transition hover:bg-[#4c2915]"
       >
-        {mode === "create" ? "Create game" : "Join game"}
+        {isSubmitting
+          ? "Starting..."
+          : mode === "create"
+            ? "Create game"
+            : "Join game"}
       </button>
+
+      {error ? (
+        <p className="mt-3 text-sm font-black text-[#8b2f1f]">{error}</p>
+      ) : null}
     </form>
   );
 }

@@ -51,3 +51,14 @@ src/lib
 public/fonts
   Comico web font
 ```
+
+## API Routes
+
+```text
+POST /api/lobby/create
+POST /api/lobby/join
+GET  /api/games/[gameId]?playerToken=...
+POST /api/games/[gameId]/moves
+```
+
+These routes are currently backed by a local mock adapter. The next step is to replace the adapter with the real `xo-grpc` client.

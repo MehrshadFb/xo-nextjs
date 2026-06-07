@@ -1,10 +1,12 @@
 export type Mark = "empty" | "x" | "o";
 
+export type PlayerMark = Exclude<Mark, "empty">;
+
 export type GameStatus = "waiting" | "in_progress" | "finished" | "aborted";
 
 export type Player = {
   displayName: string;
-  mark: Exclude<Mark, "empty">;
+  mark: PlayerMark;
   role: string;
 };
 
@@ -15,7 +17,7 @@ export type GameState = {
   board: Mark[];
   playerX: Player;
   playerO: Player | null;
-  nextTurn: Exclude<Mark, "empty">;
+  nextTurn: PlayerMark;
   winner: Mark;
   isDraw: boolean;
   version: number;

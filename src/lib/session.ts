@@ -1,6 +1,4 @@
-import { Mark, normalizeRoomCode } from "@/lib/game";
-
-export type PlayerMark = Exclude<Mark, "empty">;
+import { GameState, PlayerMark, normalizeRoomCode } from "@/lib/game";
 
 export type GameSession = {
   gameId: string;
@@ -14,18 +12,11 @@ export type GameSession = {
 const STORAGE_KEY = "xo.gameSession";
 
 type CreateSessionInput = {
+  state: GameState;
   displayName: string;
-  mode: "create" | "join";
-  joinCode?: string;
+  playerToken: string;
+  playerMark: PlayerMark;
 };
-
-function makePreviewCode() {
-  return Math.random().toString(36).slice(2, 6).toUpperCase();
-}
-
-function makePreviewToken() {
-  return `preview_${Math.random().toString(36).slice(2, 12)}`;
-}
 
 function normalizeDisplayName(displayName: string, fallback: string) {
   const trimmed = displayName.trim();
@@ -50,21 +41,16 @@ function isGameSession(value: unknown): value is GameSession {
   );
 }
 
-export function createPreviewSession({
+export function createGameSession({
+  state,
   displayName,
-  mode,
-  joinCode,
+  playerToken,
+  playerMark,
 }: CreateSessionInput): GameSession {
-  const playerMark = mode === "create" ? "x" : "o";
-  const code =
-    mode === "create"
-      ? `WOOD-${makePreviewCode()}`
-      : normalizeRoomCode(joinCode ?? "");
-
   return {
-    gameId: code,
-    joinCode: code,
-    playerToken: makePreviewToken(),
+    gameId: state.gameId,
+    joinCode: state.joinCode,
+    playerToken,
     playerMark,
     displayName: normalizeDisplayName(
       displayName,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getGameState } from "@/lib/api";
 import { GameBoard } from "@/components/game-board";
 import { GameStatus } from "@/components/game-status";
 import { GameState, previewGame } from "@/lib/game";
@@ -10,13 +11,10 @@ type GameRoomProps = {
   roomCode: string;
 };
 
-function subscribeGameSession(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-
-  return () => window.removeEventListener("storage", onStoreChange);
-}
-
-function buildGame(roomCode: string, session: GameSession | null): GameState {
+function buildFallbackGame(
+  roomCode: string,
+  session: GameSession | null,
+): GameState {
   const isPlayerX = session?.playerMark === "x";
   const isPlayerO = session?.playerMark === "o";
 
@@ -44,17 +42,59 @@ function buildGame(roomCode: string, session: GameSession | null): GameState {
 }
 
 export function GameRoom({ roomCode }: GameRoomProps) {
-  const session = useSyncExternalStore(
-    subscribeGameSession,
-    () => readGameSession(roomCode),
-    () => null,
-  );
+  const [session, setSession] = useState<GameSession | null>(null);
+  const [remoteGame, setRemoteGame] = useState<GameState | null>(null);
+  const [error, setError] = useState("");
 
-  const game = useMemo(() => buildGame(roomCode, session), [roomCode, session]);
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setSession(readGameSession(roomCode));
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, [roomCode]);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    let isCurrent = true;
+
+    getGameState(roomCode, session.playerToken)
+      .then(({ state }) => {
+        if (isCurrent) {
+          setRemoteGame(state);
+        }
+      })
+      .catch((requestError) => {
+        if (isCurrent) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Unable to load game.",
+          );
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [roomCode, session]);
+
+  const game = useMemo(
+    () => remoteGame ?? buildFallbackGame(roomCode, session),
+    [remoteGame, roomCode, session],
+  );
 
   return (
     <section className="mx-auto grid w-full max-w-2xl gap-5">
       <GameStatus game={game} session={session} />
+      {error ? (
+        <p className="wood-panel rounded-xl p-4 text-sm font-black text-[#8b2f1f]">
+          {error}
+        </p>
+      ) : null}
       <GameBoard board={game.board} />
     </section>
   );
