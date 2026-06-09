@@ -61,4 +61,4 @@ GET  /api/games/[gameId]?playerToken=...
 POST /api/games/[gameId]/moves
 ```
 
-These routes are currently backed by a local mock adapter. The next step is to replace the adapter with the real `xo-grpc` client.
+These routes run on the Next.js server and call the `xo-grpc` backend using the protobuf contract in `proto/xo/v1`.

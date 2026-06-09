@@ -20,6 +20,12 @@ export function LobbyForm() {
     setError("");
 
     const code = joinCode.trim().replace(/\s+/g, "-").toUpperCase();
+    const name = displayName.trim();
+
+    if (!name) {
+      setError("Enter your name.");
+      return;
+    }
 
     if (mode === "join" && !code) {
       setError("Enter a join code.");
@@ -31,11 +37,11 @@ export function LobbyForm() {
     try {
       const result =
         mode === "create"
-          ? await createGame(displayName)
-          : await joinGame(code, displayName);
+          ? await createGame(name)
+          : await joinGame(code, name);
       const session = createGameSession({
         state: result.state,
-        displayName,
+        displayName: name,
         playerToken: result.playerToken,
         playerMark: result.playerMark,
       });

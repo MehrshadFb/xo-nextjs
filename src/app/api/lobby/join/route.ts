@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { assertString, jsonError, readJsonObject } from "@/server/http";
-import { joinGame } from "@/server/xo/mock-client";
+import { joinGame } from "@/server/xo/grpc-client";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {

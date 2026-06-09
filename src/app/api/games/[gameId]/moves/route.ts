@@ -5,7 +5,9 @@ import {
   jsonError,
   readJsonObject,
 } from "@/server/http";
-import { makeMove } from "@/server/xo/mock-client";
+import { makeMove } from "@/server/xo/grpc-client";
+
+export const runtime = "nodejs";
 
 type RouteContext = {
   params: Promise<{

@@ -21,7 +21,7 @@ function buildFallbackGame(
   return {
     ...previewGame,
     gameId: roomCode,
-    joinCode: roomCode,
+    joinCode: session?.joinCode ?? roomCode,
     playerX: {
       ...previewGame.playerX,
       displayName: isPlayerX

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertString, jsonError } from "@/server/http";
-import { getState } from "@/server/xo/mock-client";
+import { getState } from "@/server/xo/grpc-client";
+
+export const runtime = "nodejs";
 
 type RouteContext = {
   params: Promise<{

@@ -4,6 +4,45 @@ export class ApiInputError extends Error {
   status = 400;
 }
 
+function isGrpcError(error: unknown): error is {
+  code: number;
+  details?: string;
+  message?: string;
+} {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  return (
+    "code" in error &&
+    typeof (error as { code?: unknown }).code === "number"
+  );
+}
+
+function grpcStatusToHttpStatus(code: number) {
+  if (code === 3) {
+    return 400;
+  }
+
+  if (code === 5) {
+    return 404;
+  }
+
+  if (code === 7 || code === 16) {
+    return 401;
+  }
+
+  if (code === 4) {
+    return 504;
+  }
+
+  if (code === 14) {
+    return 502;
+  }
+
+  return 500;
+}
+
 export function assertString(value: unknown, field: string) {
   if (typeof value !== "string") {
     throw new ApiInputError(`${field} is required`);
@@ -34,6 +73,18 @@ export function assertCellIndex(value: unknown): number {
 export function jsonError(error: unknown) {
   if (error instanceof ApiInputError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+
+  if (isGrpcError(error)) {
+    const message =
+      typeof error.details === "string" && error.details
+        ? error.details
+        : "Backend request failed";
+
+    return NextResponse.json(
+      { error: message },
+      { status: grpcStatusToHttpStatus(error.code) },
+    );
   }
 
   return NextResponse.json(
