@@ -2,10 +2,17 @@ import { Mark, markLabel } from "@/lib/game";
 
 type GameBoardProps = {
   board: Mark[];
-  interactive?: boolean;
+  canMove?: boolean;
+  isMoving?: boolean;
+  onMove?: (cellIndex: number) => void;
 };
 
-export function GameBoard({ board, interactive = false }: GameBoardProps) {
+export function GameBoard({
+  board,
+  canMove = false,
+  isMoving = false,
+  onMove,
+}: GameBoardProps) {
   return (
     <div
       aria-label="XO board"
@@ -14,18 +21,21 @@ export function GameBoard({ board, interactive = false }: GameBoardProps) {
     >
       {board.map((mark, index) => {
         const isEmpty = mark === "empty";
+        const isDisabled = !canMove || !isEmpty || isMoving;
 
         return (
           <button
             key={`${mark}-${index}`}
             type="button"
-            disabled={!interactive || !isEmpty}
+            disabled={isDisabled}
+            onClick={() => onMove?.(index)}
             aria-label={
               isEmpty ? `Cell ${index + 1}, empty` : `Cell ${index + 1}, ${mark}`
             }
             className={[
               "wood-cell grid aspect-square place-items-center rounded-lg font-black transition focus:outline-none focus:ring-4 focus:ring-[#d7fff8]",
               isEmpty ? "wood-cell-empty" : "",
+              isDisabled ? "opacity-90" : "hover:-translate-y-0.5",
               mark === "x" ? "mark-x" : "",
               mark === "o" ? "mark-o" : "",
             ].join(" ")}

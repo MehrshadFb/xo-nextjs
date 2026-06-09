@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getGameState } from "@/lib/api";
+import { getGameState, makeMove } from "@/lib/api";
 import { GameBoard } from "@/components/game-board";
 import { GameStatus } from "@/components/game-status";
 import { GameState, previewGame } from "@/lib/game";
@@ -45,6 +45,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
   const [session, setSession] = useState<GameSession | null>(null);
   const [remoteGame, setRemoteGame] = useState<GameState | null>(null);
   const [error, setError] = useState("");
+  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -65,6 +66,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
       .then(({ state }) => {
         if (isCurrent) {
           setRemoteGame(state);
+          setError("");
         }
       })
       .catch((requestError) => {
@@ -86,16 +88,71 @@ export function GameRoom({ roomCode }: GameRoomProps) {
     () => remoteGame ?? buildFallbackGame(roomCode, session),
     [remoteGame, roomCode, session],
   );
+  const canMove =
+    Boolean(session) &&
+    game.status === "in_progress" &&
+    game.nextTurn === session?.playerMark &&
+    !isMoving;
+
+  async function handleMove(cellIndex: number) {
+    if (!session || !canMove || game.board[cellIndex] !== "empty") {
+      return;
+    }
+
+    setIsMoving(true);
+    setError("");
+
+    try {
+      const { state } = await makeMove(game.gameId, session.playerToken, cellIndex);
+      setRemoteGame(state);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to make move.",
+      );
+    } finally {
+      setIsMoving(false);
+    }
+  }
+
+  function statusMessage() {
+    if (!session) {
+      return "Create or join a game to play.";
+    }
+
+    if (game.status === "waiting") {
+      return "Waiting for the second player.";
+    }
+
+    if (game.status !== "in_progress") {
+      return "Game over.";
+    }
+
+    if (isMoving) {
+      return "Saving move...";
+    }
+
+    return game.nextTurn === session.playerMark ? "Your turn." : "Opponent's turn.";
+  }
 
   return (
     <section className="mx-auto grid w-full max-w-2xl gap-5">
       <GameStatus game={game} session={session} />
+      <p className="text-center text-sm font-black text-[#5f351c]">
+        {statusMessage()}
+      </p>
       {error ? (
         <p className="wood-panel rounded-xl p-4 text-sm font-black text-[#8b2f1f]">
           {error}
         </p>
       ) : null}
-      <GameBoard board={game.board} />
+      <GameBoard
+        board={game.board}
+        canMove={canMove}
+        isMoving={isMoving}
+        onMove={handleMove}
+      />
     </section>
   );
 }
