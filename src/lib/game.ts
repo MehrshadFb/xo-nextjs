@@ -51,6 +51,34 @@ export const previewGame: GameState = {
   version: 5,
 };
 
+const winningLines = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
+
+export function winningCellIndexes(board: Mark[]) {
+  for (const line of winningLines) {
+    const [firstIndex, secondIndex, thirdIndex] = line;
+    const mark = board[firstIndex];
+
+    if (
+      mark !== "empty" &&
+      mark === board[secondIndex] &&
+      mark === board[thirdIndex]
+    ) {
+      return line;
+    }
+  }
+
+  return [];
+}
+
 export function markLabel(mark: Mark) {
   if (mark === "empty") {
     return "";

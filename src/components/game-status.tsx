@@ -7,7 +7,30 @@ type GameStatusProps = {
   session: GameSession | null;
 };
 
+function turnMetric(game: GameState) {
+  if (game.status === "finished") {
+    return {
+      label: "Winner",
+      value: game.isDraw ? "Draw" : markLabel(game.winner) || "Done",
+    };
+  }
+
+  if (game.status === "aborted") {
+    return {
+      label: "Outcome",
+      value: "Ended",
+    };
+  }
+
+  return {
+    label: "Next turn",
+    value: markLabel(game.nextTurn),
+  };
+}
+
 export function GameStatus({ game, session }: GameStatusProps) {
+  const metric = turnMetric(game);
+
   return (
     <section className="wood-panel rounded-xl p-4 sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -35,9 +58,9 @@ export function GameStatus({ game, session }: GameStatusProps) {
           </dd>
         </div>
         <div>
-          <dt>Next turn</dt>
+          <dt>{metric.label}</dt>
           <dd className="mt-1 font-black text-[#1f7a71]">
-            {markLabel(game.nextTurn)}
+            {metric.value}
           </dd>
         </div>
         <div>

@@ -1,4 +1,4 @@
-import { Mark, markLabel } from "@/lib/game";
+import { Mark, markLabel, winningCellIndexes } from "@/lib/game";
 
 type GameBoardProps = {
   board: Mark[];
@@ -13,6 +13,8 @@ export function GameBoard({
   isMoving = false,
   onMove,
 }: GameBoardProps) {
+  const winningCells = new Set(winningCellIndexes(board));
+
   return (
     <div
       aria-label="XO board"
@@ -35,6 +37,7 @@ export function GameBoard({
             className={[
               "wood-cell grid aspect-square place-items-center rounded-lg font-black transition focus:outline-none focus:ring-4 focus:ring-[#d7fff8]",
               isEmpty ? "wood-cell-empty" : "",
+              winningCells.has(index) ? "wood-cell-win" : "",
               isDisabled ? "opacity-90" : "hover:-translate-y-0.5",
               mark === "x" ? "mark-x" : "",
               mark === "o" ? "mark-o" : "",

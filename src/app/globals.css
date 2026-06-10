@@ -81,6 +81,13 @@ button:disabled {
   background: #d59654;
 }
 
+.wood-cell-win {
+  border-color: #1f7a71;
+  box-shadow:
+    0 8px 16px rgba(95, 53, 28, 0.12),
+    inset 0 0 0 4px rgba(31, 122, 113, 0.22);
+}
+
 .mark-x {
   color: #4a2815;
   text-shadow: 0 6px 0 #f0bf78;
