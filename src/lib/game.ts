@@ -23,6 +23,13 @@ export type GameState = {
   version: number;
 };
 
+export type GameStreamEvent = {
+  type: string;
+  eventId: number;
+  state: GameState;
+  message: string;
+};
+
 export const previewGame: GameState = {
   gameId: "preview",
   joinCode: "WOOD-42",

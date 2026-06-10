@@ -58,6 +58,7 @@ public/fonts
 POST /api/lobby/create
 POST /api/lobby/join
 GET  /api/games/[gameId]?playerToken=...
+GET  /api/games/[gameId]/events?playerToken=...&afterVersion=...
 POST /api/games/[gameId]/moves
 ```
 

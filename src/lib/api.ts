@@ -1,4 +1,4 @@
-import { GameState, PlayerMark } from "@/lib/game";
+import type { GameState, GameStreamEvent, PlayerMark } from "@/lib/game";
 
 export type StartGameResponse = {
   state: GameState;
@@ -53,6 +53,19 @@ export function getGameState(gameId: string, playerToken: string) {
   );
 }
 
+export function gameEventsUrl(
+  gameId: string,
+  playerToken: string,
+  afterVersion = 0,
+) {
+  const params = new URLSearchParams({
+    playerToken,
+    afterVersion: String(afterVersion),
+  });
+
+  return `/api/games/${encodeURIComponent(gameId)}/events?${params.toString()}`;
+}
+
 export function makeMove(
   gameId: string,
   playerToken: string,
@@ -66,3 +79,5 @@ export function makeMove(
     },
   );
 }
+
+export type { GameStreamEvent };

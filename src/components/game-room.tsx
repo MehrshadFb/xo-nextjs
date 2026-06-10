@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getGameState, makeMove } from "@/lib/api";
+import {
+  gameEventsUrl,
+  getGameState,
+  makeMove,
+} from "@/lib/api";
 import { GameBoard } from "@/components/game-board";
 import { GameStatus } from "@/components/game-status";
-import { GameState, previewGame } from "@/lib/game";
-import { GameSession, readGameSession } from "@/lib/session";
+import type { GameStreamEvent } from "@/lib/api";
+import { previewGame } from "@/lib/game";
+import type { GameState } from "@/lib/game";
+import { readGameSession } from "@/lib/session";
+import type { GameSession } from "@/lib/session";
 
 type GameRoomProps = {
   roomCode: string;
@@ -46,6 +53,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
   const [remoteGame, setRemoteGame] = useState<GameState | null>(null);
   const [error, setError] = useState("");
   const [isMoving, setIsMoving] = useState(false);
+  const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -84,6 +92,68 @@ export function GameRoom({ roomCode }: GameRoomProps) {
     };
   }, [roomCode, session]);
 
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    const source = new EventSource(
+      gameEventsUrl(roomCode, session.playerToken),
+    );
+
+    function handleOpen() {
+      setIsLive(true);
+    }
+
+    function handleGameEvent(event: MessageEvent<string>) {
+      let payload: GameStreamEvent;
+
+      try {
+        payload = JSON.parse(event.data) as GameStreamEvent;
+      } catch {
+        setError("Unable to read realtime update.");
+        setIsLive(false);
+        return;
+      }
+
+      setRemoteGame(payload.state);
+      setError("");
+      setIsLive(true);
+    }
+
+    function handleStreamError(event: MessageEvent<string>) {
+      let payload: { error?: string };
+
+      try {
+        payload = JSON.parse(event.data) as { error?: string };
+      } catch {
+        payload = {};
+      }
+
+      setError(payload.error ?? "Realtime stream failed.");
+      setIsLive(false);
+      source.close();
+    }
+
+    function handleConnectionError() {
+      setIsLive(false);
+    }
+
+    source.addEventListener("open", handleOpen);
+    source.addEventListener("game", handleGameEvent);
+    source.addEventListener("stream-error", handleStreamError);
+    source.addEventListener("error", handleConnectionError);
+
+    return () => {
+      source.removeEventListener("open", handleOpen);
+      source.removeEventListener("game", handleGameEvent);
+      source.removeEventListener("stream-error", handleStreamError);
+      source.removeEventListener("error", handleConnectionError);
+      source.close();
+      setIsLive(false);
+    };
+  }, [roomCode, session]);
+
   const game = useMemo(
     () => remoteGame ?? buildFallbackGame(roomCode, session),
     [remoteGame, roomCode, session],
@@ -119,6 +189,10 @@ export function GameRoom({ roomCode }: GameRoomProps) {
   function statusMessage() {
     if (!session) {
       return "Create or join a game to play.";
+    }
+
+    if (!remoteGame && !isLive) {
+      return "Connecting to game.";
     }
 
     if (game.status === "waiting") {

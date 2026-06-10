@@ -1,7 +1,13 @@
 import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 import path from "node:path";
-import { GameState, Mark, Player, PlayerMark } from "@/lib/game";
+import type {
+  GameState,
+  GameStreamEvent,
+  Mark,
+  Player,
+  PlayerMark,
+} from "@/lib/game";
 
 type StartGameResult = {
   state: GameState;
@@ -36,6 +42,13 @@ type GameStateProtoResponse = {
   state?: ProtoGameState;
 };
 
+type ProtoGameEvent = {
+  type?: string;
+  eventId?: number | string;
+  state?: ProtoGameState;
+  message?: string;
+};
+
 type UnaryMethod = (
   request: Record<string, unknown>,
   callback: (error: grpc.ServiceError | null, response: unknown) => void,
@@ -43,16 +56,29 @@ type UnaryMethod = (
 
 type UnaryClient = Record<string, UnaryMethod>;
 
+type WatchGameMethod = (
+  request: Record<string, unknown>,
+) => grpc.ClientReadableStream<unknown>;
+
+type GameServiceClient = UnaryClient & {
+  watchGame: WatchGameMethod;
+};
+
 type ServiceConstructor = new (
   target: string,
   credentials: grpc.ChannelCredentials,
 ) => UnaryClient;
 
+type GameServiceConstructor = new (
+  target: string,
+  credentials: grpc.ChannelCredentials,
+) => GameServiceClient;
+
 type XoPackage = {
   xo: {
     v1: {
       LobbyService: ServiceConstructor;
-      GameService: ServiceConstructor;
+      GameService: GameServiceConstructor;
     };
   };
 };
@@ -202,6 +228,15 @@ function mapGameState(state: ProtoGameState | undefined): GameState {
   };
 }
 
+function mapGameEvent(event: ProtoGameEvent): GameStreamEvent {
+  return {
+    type: event.type ?? "GAME_EVENT_TYPE_UNSPECIFIED",
+    eventId: mapVersion(event.eventId),
+    state: mapGameState(event.state),
+    message: event.message ?? "",
+  };
+}
+
 function mapStartGameResponse(
   response: StartGameProtoResponse,
   playerMark: PlayerMark,
@@ -265,4 +300,41 @@ export async function makeMove(
   );
 
   return mapGameState(response.state);
+}
+
+export function watchGame({
+  gameId,
+  playerToken,
+  afterVersion,
+  onEvent,
+  onError,
+  onEnd,
+}: {
+  gameId: string;
+  playerToken: string;
+  afterVersion: number;
+  onEvent: (event: GameStreamEvent) => void;
+  onError: (error: Error) => void;
+  onEnd: () => void;
+}) {
+  const stream = gameClient().watchGame({
+    gameId,
+    playerToken,
+    afterVersion,
+  });
+
+  stream.on("data", (event) => {
+    try {
+      onEvent(mapGameEvent(event as ProtoGameEvent));
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error("Invalid stream event"));
+      stream.cancel();
+    }
+  });
+  stream.on("error", onError);
+  stream.on("end", onEnd);
+
+  return () => {
+    stream.cancel();
+  };
 }
