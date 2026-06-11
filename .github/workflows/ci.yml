@@ -25,4 +25,6 @@ jobs:
         run: npm ci
 
       - name: Run checks
+        env:
+          XO_GRPC_TARGET: localhost:50051
         run: npm run check

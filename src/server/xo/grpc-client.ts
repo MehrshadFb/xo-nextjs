@@ -1,6 +1,7 @@
 import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 import path from "node:path";
+import { xoGrpcTarget } from "@/server/config";
 import type {
   GameState,
   GameStreamEvent,
@@ -101,20 +102,16 @@ const xoPackage = grpc.loadPackageDefinition(
   packageDefinition,
 ) as unknown as XoPackage;
 
-function grpcTarget() {
-  return process.env.XO_GRPC_TARGET ?? "localhost:50051";
-}
-
 function lobbyClient() {
   return new xoPackage.xo.v1.LobbyService(
-    grpcTarget(),
+    xoGrpcTarget(),
     grpc.credentials.createInsecure(),
   );
 }
 
 function gameClient() {
   return new xoPackage.xo.v1.GameService(
-    grpcTarget(),
+    xoGrpcTarget(),
     grpc.credentials.createInsecure(),
   );
 }

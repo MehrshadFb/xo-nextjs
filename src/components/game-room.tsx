@@ -29,7 +29,7 @@ function buildFallbackGame(
   const isPlayerO = session?.playerMark === "o";
 
   return {
-    gameId: roomCode,
+    gameId: session?.gameId ?? roomCode,
     joinCode: session?.joinCode ?? roomCode,
     status: "waiting",
     board: emptyBoard,
@@ -146,7 +146,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
 
     let isCurrent = true;
 
-    getGameState(roomCode, session.playerToken)
+    getGameState(session.gameId, session.playerToken)
       .then(({ state }) => {
         if (isCurrent) {
           setRemoteGame(state);
@@ -174,7 +174,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
     }
 
     const source = new EventSource(
-      gameEventsUrl(roomCode, session.playerToken),
+      gameEventsUrl(session.gameId, session.playerToken),
     );
 
     function handleOpen() {

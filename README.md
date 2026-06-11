@@ -23,6 +23,8 @@ Update `.env.local` if your backend is not running on the default target:
 XO_GRPC_TARGET=localhost:50051
 ```
 
+`XO_GRPC_TARGET` is server-only and is read by the Next.js API routes. Use a gRPC target in `host:port` format. Do not include `http://` or `https://`.
+
 ## Development
 
 ```bash
@@ -38,6 +40,21 @@ npm run check
 ```
 
 This runs linting and a production build, matching the GitHub Actions CI workflow.
+
+## Runtime Configuration
+
+```text
+XO_GRPC_TARGET=localhost:50051
+```
+
+Development defaults to `localhost:50051` if `XO_GRPC_TARGET` is omitted. Production requires it so the deployed web server does not accidentally try to call a local backend.
+
+Example production values:
+
+```text
+XO_GRPC_TARGET=xo-grpc.internal:50051
+XO_GRPC_TARGET=api.example.com:50051
+```
 
 ## Project Shape
 

@@ -76,7 +76,9 @@ export function readGameSession(gameId: string) {
 
     if (
       isGameSession(parsedSession) &&
-      normalizeRoomCode(parsedSession.gameId) === normalizeRoomCode(gameId)
+      (parsedSession.gameId === gameId ||
+        normalizeRoomCode(parsedSession.gameId) === normalizeRoomCode(gameId) ||
+        normalizeRoomCode(parsedSession.joinCode) === normalizeRoomCode(gameId))
     ) {
       return parsedSession;
     }
