@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { GameState, markLabel, statusLabel } from "@/lib/game";
 import { clearGameSession, GameSession } from "@/lib/session";
 
@@ -30,6 +33,20 @@ function turnMetric(game: GameState) {
 
 export function GameStatus({ game, session }: GameStatusProps) {
   const metric = turnMetric(game);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
+
+  async function copyRoomCode() {
+    try {
+      await navigator.clipboard.writeText(game.joinCode);
+      setCopyState("copied");
+      window.setTimeout(() => setCopyState("idle"), 1800);
+    } catch {
+      setCopyState("failed");
+      window.setTimeout(() => setCopyState("idle"), 2200);
+    }
+  }
 
   return (
     <section className="wood-panel rounded-xl p-4 sm:p-5">
@@ -41,13 +58,26 @@ export function GameStatus({ game, session }: GameStatusProps) {
           </h1>
         </div>
 
-        <Link
-          href="/"
-          onClick={clearGameSession}
-          className="w-fit rounded-lg border-2 border-[#5f351c]/35 bg-[#fff6df] px-4 py-2 text-sm font-black text-[#5f351c] transition hover:border-[#5f351c]"
-        >
-          New game
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={copyRoomCode}
+            className="rounded-lg border-2 border-[#5f351c]/35 bg-[#fff6df] px-4 py-2 text-sm font-black text-[#5f351c] transition hover:border-[#5f351c]"
+          >
+            {copyState === "copied"
+              ? "Copied"
+              : copyState === "failed"
+                ? "Copy failed"
+                : "Copy code"}
+          </button>
+          <Link
+            href="/"
+            onClick={clearGameSession}
+            className="rounded-lg border-2 border-[#5f351c]/35 bg-[#fff6df] px-4 py-2 text-sm font-black text-[#5f351c] transition hover:border-[#5f351c]"
+          >
+            New game
+          </Link>
+        </div>
       </div>
 
       <dl className="mt-5 grid gap-3 border-t-2 border-[#5f351c]/20 pt-4 text-sm text-[#5f351c] sm:grid-cols-4">
