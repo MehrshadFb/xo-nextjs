@@ -68,6 +68,29 @@ XO_GRPC_TARGET=xo-grpc.internal:50051
 XO_GRPC_TARGET=api.example.com:50051
 ```
 
+## Production Run
+
+Build and start the web server with the backend target available in the server environment:
+
+```bash
+npm ci
+XO_GRPC_TARGET=localhost:50051 npm run build
+XO_GRPC_TARGET=localhost:50051 npm run start
+```
+
+Then verify the running production server:
+
+```bash
+SMOKE_BASE_URL=http://127.0.0.1:3000 npm run smoke
+```
+
+Deployment checklist:
+
+- `XO_GRPC_TARGET` is set on the deployed Next.js server.
+- The Next.js server can reach the `xo-grpc` backend over gRPC.
+- The backend has Postgres migrations applied.
+- The deployment serves the Next.js HTTP app and keeps API routes on the Node.js runtime.
+
 ## Project Shape
 
 ```text
