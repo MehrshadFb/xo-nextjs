@@ -171,6 +171,12 @@ function logStep(message) {
 async function main() {
   logStep(`using ${baseUrl}`);
 
+  const health = await requestJson("/api/health");
+
+  assert(health.status === "ok", "health endpoint should report ok");
+  assert(health.backend === "serving", "health endpoint should report backend serving");
+  logStep("health check passed");
+
   const created = await postJson("/api/lobby/create", {
     displayName: "Smoke X",
   });

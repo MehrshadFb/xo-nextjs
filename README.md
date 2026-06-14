@@ -47,7 +47,7 @@ Run the local integration smoke test after starting the frontend and backend:
 npm run smoke
 ```
 
-The smoke test calls the Next.js API routes for create, join, move, state fetch, and realtime events. It expects the frontend at `http://127.0.0.1:3000` by default. Override that with `SMOKE_BASE_URL` if needed:
+The smoke test calls the Next.js API routes for health, create, join, move, state fetch, and realtime events. It expects the frontend at `http://127.0.0.1:3000` by default. Override that with `SMOKE_BASE_URL` if needed:
 
 ```bash
 SMOKE_BASE_URL=http://127.0.0.1:3001 npm run smoke
@@ -107,6 +107,7 @@ public/fonts
 ## API Routes
 
 ```text
+GET  /api/health
 POST /api/lobby/create
 POST /api/lobby/join
 GET  /api/games/[gameId]?playerToken=...

@@ -43,6 +43,16 @@ type GameStateProtoResponse = {
   state?: ProtoGameState;
 };
 
+type HealthProtoResponse = {
+  status?: unknown;
+  message?: string;
+};
+
+export type BackendHealth = {
+  status: "serving" | "not_serving" | "unknown";
+  message: string;
+};
+
 type ProtoGameEvent = {
   type?: string;
   eventId?: number | string;
@@ -80,13 +90,14 @@ type XoPackage = {
     v1: {
       LobbyService: ServiceConstructor;
       GameService: GameServiceConstructor;
+      HealthService: ServiceConstructor;
     };
   };
 };
 
 const protoRoot = path.join(process.cwd(), "proto");
 const packageDefinition = protoLoader.loadSync(
-  ["xo/v1/lobby.proto", "xo/v1/game.proto"],
+  ["xo/v1/lobby.proto", "xo/v1/game.proto", "xo/v1/health.proto"],
   {
     arrays: true,
     defaults: false,
@@ -111,6 +122,13 @@ function lobbyClient() {
 
 function gameClient() {
   return new xoPackage.xo.v1.GameService(
+    xoGrpcTarget(),
+    grpc.credentials.createInsecure(),
+  );
+}
+
+function healthClient() {
+  return new xoPackage.xo.v1.HealthService(
     xoGrpcTarget(),
     grpc.credentials.createInsecure(),
   );
@@ -185,6 +203,18 @@ function mapStatus(status: unknown): GameState["status"] {
   return "waiting";
 }
 
+function mapHealthStatus(status: unknown): BackendHealth["status"] {
+  if (status === "HEALTH_STATUS_SERVING" || status === 1 || status === "1") {
+    return "serving";
+  }
+
+  if (status === "HEALTH_STATUS_NOT_SERVING" || status === 2 || status === "2") {
+    return "not_serving";
+  }
+
+  return "unknown";
+}
+
 function mapBoard(board: unknown[] | undefined) {
   const mappedBoard = Array.isArray(board) ? board.map(mapMark) : [];
 
@@ -257,6 +287,19 @@ export async function createGame(displayName: string): Promise<StartGameResult> 
   );
 
   return mapStartGameResponse(response, "x");
+}
+
+export async function getHealth(): Promise<BackendHealth> {
+  const response = await callUnary<HealthProtoResponse>(
+    healthClient(),
+    "health",
+    {},
+  );
+
+  return {
+    status: mapHealthStatus(response.status),
+    message: response.message ?? "",
+  };
 }
 
 export async function joinGame(
