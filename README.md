@@ -39,7 +39,15 @@ Open `http://localhost:3000`.
 npm run check
 ```
 
-This runs linting and a production build, matching the GitHub Actions CI workflow.
+This runs the frontend proto contract check, linting, and a production build, matching the GitHub Actions CI workflow.
+
+Run only the checked-in proto contract check:
+
+```bash
+npm run contract
+```
+
+This validates the frontend-facing contract surface from the local `proto/` files without cloning or starting the backend repo.
 
 Run the local integration smoke test after starting the frontend and backend:
 
@@ -90,6 +98,17 @@ Deployment checklist:
 - The Next.js server can reach the `xo-grpc` backend over gRPC.
 - The backend has Postgres migrations applied.
 - The deployment serves the Next.js HTTP app and keeps API routes on the Node.js runtime.
+
+## CI/CD
+
+GitHub Actions stays scoped to this frontend repo:
+
+- `CI` runs on pull requests and pushes to `main`.
+- `CI` runs `npm run check`, which validates the local proto contract, lints, and builds.
+- `Production Artifact` runs on pushes to `main` and manually through `workflow_dispatch`.
+- `Production Artifact` builds a standalone Next.js bundle and uploads `xo-nextjs-production.tar.gz`.
+
+The workflows do not clone or start the backend repo. End-to-end verification that requires a live backend remains the local/manual `npm run smoke` check.
 
 ## Project Shape
 

@@ -1,0 +1,55 @@
+name: Production Artifact
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-artifact-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-artifact:
+    name: Build standalone artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      XO_GRPC_TARGET: ${{ vars.XO_GRPC_TARGET || 'localhost:50051' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run checks
+        run: npm run check
+
+      - name: Package standalone app
+        run: |
+          mkdir -p deploy/app/.next
+          cp -R .next/standalone/. deploy/app/
+          cp -R .next/static deploy/app/.next/static
+          cp -R public deploy/app/public
+          tar -C deploy -czf xo-nextjs-production.tar.gz app
+
+      - name: Upload production artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xo-nextjs-production
+          path: xo-nextjs-production.tar.gz
+          if-no-files-found: error
+          retention-days: 14
