@@ -55,7 +55,7 @@ Run the local integration smoke test after starting the frontend and backend:
 npm run smoke
 ```
 
-The smoke test calls the Next.js API routes for health, create, join, move, state fetch, and realtime events. It expects the frontend at `http://127.0.0.1:3000` by default. Override that with `SMOKE_BASE_URL` if needed:
+The smoke test calls the Next.js API routes for health, create, join, moves, rematch, state fetch, and realtime events. It expects the frontend at `http://127.0.0.1:3000` by default. Override that with `SMOKE_BASE_URL` if needed:
 
 ```bash
 SMOKE_BASE_URL=http://127.0.0.1:3001 npm run smoke
@@ -132,6 +132,7 @@ POST /api/lobby/join
 GET  /api/games/[gameId]?playerToken=...
 GET  /api/games/[gameId]/events?playerToken=...&afterVersion=...
 POST /api/games/[gameId]/moves
+POST /api/games/[gameId]/rematch
 ```
 
 These routes run on the Next.js server and call the `xo-grpc` backend using the protobuf contract in `proto/xo/v1`.

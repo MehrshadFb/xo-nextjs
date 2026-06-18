@@ -168,6 +168,37 @@ function logStep(message) {
   console.log(`smoke: ${message}`);
 }
 
+async function moveAndWait({
+  cellIndex,
+  expectedMark,
+  gameId,
+  playerToken,
+  stream,
+}) {
+  const moved = await postJson(`/api/games/${encodeURIComponent(gameId)}/moves`, {
+    cellIndex,
+    playerToken,
+  });
+
+  assert(
+    moved.state.board[cellIndex] === expectedMark,
+    `move response did not place ${expectedMark.toUpperCase()} in cell ${cellIndex}`,
+  );
+
+  const streamed = await waitForGameEvent(stream, moved.state.version);
+
+  assert(
+    streamed.state.version === moved.state.version,
+    "SSE version mismatch after move",
+  );
+  assert(
+    streamed.state.board[cellIndex] === expectedMark,
+    `SSE event did not include ${expectedMark.toUpperCase()} move`,
+  );
+
+  return moved;
+}
+
 async function main() {
   logStep(`using ${baseUrl}`);
 
@@ -199,6 +230,8 @@ async function main() {
   assert(joined.playerMark === "o", "joined player should be O");
   assert(joined.state.gameId === gameId, "join response gameId mismatch");
   assert(joined.state.status === "in_progress", "joined game should be in progress");
+  assert(joined.state.roundNumber === 1, "first round should be round 1");
+  assert(joined.state.score.draws === 0, "new game should start with zero draws");
   logStep("joined second player");
 
   const stream = await openGameStream(gameId, playerXToken, 0);
@@ -210,30 +243,105 @@ async function main() {
   );
   logStep("opened realtime stream");
 
-  const moved = await postJson(`/api/games/${encodeURIComponent(gameId)}/moves`, {
+  const firstMove = await moveAndWait({
     cellIndex: 4,
+    expectedMark: "x",
+    gameId,
     playerToken: playerXToken,
+    stream,
   });
 
-  assert(moved.state.board[4] === "x", "move response did not place X in center");
-  assert(moved.state.nextTurn === "o", "move response should advance turn to O");
+  assert(firstMove.state.nextTurn === "o", "first move should advance turn to O");
   logStep("made X move");
 
-  const streamed = await waitForGameEvent(stream, moved.state.version, {
+  await moveAndWait({
+    cellIndex: 0,
+    expectedMark: "o",
+    gameId,
+    playerToken: playerOToken,
+    stream,
+  });
+
+  await moveAndWait({
+    cellIndex: 3,
+    expectedMark: "x",
+    gameId,
+    playerToken: playerXToken,
+    stream,
+  });
+
+  await moveAndWait({
+    cellIndex: 1,
+    expectedMark: "o",
+    gameId,
+    playerToken: playerOToken,
+    stream,
+  });
+
+  const winningMove = await moveAndWait({
+    cellIndex: 5,
+    expectedMark: "x",
+    gameId,
+    playerToken: playerXToken,
+    stream,
+  });
+
+  assert(winningMove.state.status === "finished", "winning move should finish game");
+  assert(winningMove.state.winner === "x", "X should win the first round");
+  assert(winningMove.state.score.xWins === 1, "X score should increment");
+  assert(winningMove.state.score.oWins === 0, "O score should stay zero");
+  assert(winningMove.state.score.draws === 0, "draw score should stay zero");
+  logStep("finished first round and verified score");
+
+  const rematchX = await postJson(
+    `/api/games/${encodeURIComponent(gameId)}/rematch`,
+    { playerToken: playerXToken },
+  );
+  const rematchXEvent = await waitForGameEvent(stream, rematchX.state.version);
+
+  assert(rematchX.state.status === "finished", "first rematch request should wait");
+  assert(
+    rematchX.state.rematch.xRequested === true,
+    "X rematch request should be recorded",
+  );
+  assert(
+    rematchXEvent.type === "GAME_EVENT_TYPE_REMATCH_REQUESTED",
+    "SSE should report rematch requested",
+  );
+  logStep("requested rematch as X");
+
+  const rematchO = await postJson(
+    `/api/games/${encodeURIComponent(gameId)}/rematch`,
+    { playerToken: playerOToken },
+  );
+  const rematchOEvent = await waitForGameEvent(stream, rematchO.state.version, {
     close: true,
   });
 
-  assert(streamed.state.board[4] === "x", "SSE event did not include X move");
-  assert(streamed.state.version === moved.state.version, "SSE version mismatch");
-  logStep("received realtime move event");
+  assert(rematchO.state.status === "in_progress", "second request should start round");
+  assert(rematchO.state.roundNumber === 2, "rematch should advance to round 2");
+  assert(rematchO.state.nextTurn === "x", "new round should start with X");
+  assert(rematchO.state.score.xWins === 1, "X score should persist");
+  assert(rematchO.state.score.oWins === 0, "O score should persist");
+  assert(rematchO.state.score.draws === 0, "draw score should persist");
+  assert(
+    rematchO.state.board.every((mark) => mark === "empty"),
+    "new round should reset the board",
+  );
+  assert(
+    rematchOEvent.type === "GAME_EVENT_TYPE_ROUND_STARTED",
+    "SSE should report round started",
+  );
+  logStep("started next round and verified score persisted");
 
   const params = new URLSearchParams({ playerToken: playerOToken });
   const fetched = await requestJson(
     `/api/games/${encodeURIComponent(gameId)}?${params}`,
   );
 
-  assert(fetched.state.board[4] === "x", "state fetch did not include X move");
-  assert(fetched.state.nextTurn === "o", "state fetch should show O turn");
+  assert(fetched.state.roundNumber === 2, "state fetch should show round 2");
+  assert(fetched.state.score.xWins === 1, "state fetch should include X score");
+  assert(fetched.state.board.every((mark) => mark === "empty"), "state fetch should show reset board");
   logStep("fetched updated game state");
 
   console.log("smoke: passed");
