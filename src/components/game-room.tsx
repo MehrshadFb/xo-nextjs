@@ -6,6 +6,7 @@ import {
   gameEventsUrl,
   getGameState,
   makeMove,
+  requestRematch,
 } from "@/lib/api";
 import { GameBoard } from "@/components/game-board";
 import { GameStatus } from "@/components/game-status";
@@ -49,6 +50,16 @@ function buildFallbackGame(
     winner: "empty",
     isDraw: false,
     version: 0,
+    score: {
+      xWins: 0,
+      oWins: 0,
+      draws: 0,
+    },
+    rematch: {
+      xRequested: false,
+      oRequested: false,
+    },
+    roundNumber: 1,
   };
 }
 
@@ -66,6 +77,19 @@ function outcomeMessage(game: GameState, session: GameSession | null) {
   }
 
   return game.winner === session.playerMark ? "You won." : "You lost.";
+}
+
+function rematchRequestedBySession(
+  game: GameState,
+  session: GameSession | null | undefined,
+) {
+  if (!session) {
+    return false;
+  }
+
+  return session.playerMark === "x"
+    ? game.rematch.xRequested
+    : game.rematch.oRequested;
 }
 
 function RoomNotice({
@@ -128,6 +152,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
   const [remoteGame, setRemoteGame] = useState<GameState | null>(null);
   const [error, setError] = useState("");
   const [isMoving, setIsMoving] = useState(false);
+  const [isRequestingRematch, setIsRequestingRematch] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -239,6 +264,12 @@ export function GameRoom({ roomCode }: GameRoomProps) {
     game.status === "in_progress" &&
     game.nextTurn === session?.playerMark &&
     !isMoving;
+  const hasRequestedRematch = rematchRequestedBySession(game, session);
+  const canRequestRematch =
+    Boolean(session) &&
+    game.status === "finished" &&
+    !hasRequestedRematch &&
+    !isRequestingRematch;
 
   async function handleMove(cellIndex: number) {
     if (!session || !canMove || game.board[cellIndex] !== "empty") {
@@ -259,6 +290,28 @@ export function GameRoom({ roomCode }: GameRoomProps) {
       );
     } finally {
       setIsMoving(false);
+    }
+  }
+
+  async function handleRequestRematch() {
+    if (!session || !canRequestRematch) {
+      return;
+    }
+
+    setIsRequestingRematch(true);
+    setError("");
+
+    try {
+      const { state } = await requestRematch(game.gameId, session.playerToken);
+      setRemoteGame(state);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to request next round.",
+      );
+    } finally {
+      setIsRequestingRematch(false);
     }
   }
 
@@ -287,6 +340,14 @@ export function GameRoom({ roomCode }: GameRoomProps) {
     }
 
     if (game.status === "finished") {
+      if (isRequestingRematch) {
+        return "Requesting next round...";
+      }
+
+      if (hasRequestedRematch) {
+        return "Waiting for opponent.";
+      }
+
       return outcomeMessage(game, session);
     }
 
@@ -345,6 +406,22 @@ export function GameRoom({ roomCode }: GameRoomProps) {
       <p className="text-center text-sm font-black text-[#5f351c]">
         {statusMessage()}
       </p>
+      {game.status === "finished" && session ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            disabled={!canRequestRematch}
+            onClick={handleRequestRematch}
+            className="relative z-10 inline-flex h-12 w-full max-w-56 select-none items-center justify-center rounded-lg border-2 border-[#5f351c] bg-[#5f351c] px-6 text-sm font-black leading-none text-[#fff6df] transition hover:bg-[#4c2915] disabled:border-[#5f351c]/35 disabled:bg-[#fff6df] disabled:text-[#5f351c]/70"
+          >
+            {isRequestingRematch
+              ? "Requesting..."
+              : hasRequestedRematch
+                ? "Waiting for opponent"
+                : "Play again"}
+          </button>
+        </div>
+      ) : null}
       {error ? (
         <p className="wood-panel rounded-xl p-4 text-sm font-black text-[#8b2f1f]">
           {error}

@@ -33,6 +33,7 @@ function turnMetric(game: GameState) {
 
 export function GameStatus({ game, session }: GameStatusProps) {
   const metric = turnMetric(game);
+  const playerOName = game.playerO?.displayName ?? "Waiting";
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle",
   );
@@ -56,6 +57,11 @@ export function GameStatus({ game, session }: GameStatusProps) {
           <h1 className="mt-1 break-all font-mono text-3xl font-black text-[#5f351c]">
             {game.joinCode}
           </h1>
+          <p className="mt-1 text-sm font-black text-[#5f351c]/80">
+            {session
+              ? `You: ${session.displayName} (${markLabel(session.playerMark)})`
+              : "Preview"}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -80,35 +86,53 @@ export function GameStatus({ game, session }: GameStatusProps) {
         </div>
       </div>
 
-      <dl className="mt-5 grid gap-3 border-t-2 border-[#5f351c]/20 pt-4 text-sm text-[#5f351c] sm:grid-cols-4">
-        <div>
-          <dt>Status</dt>
-          <dd className="mt-1 font-black text-[#24160d]">
-            {statusLabel(game.status)}
-          </dd>
-        </div>
-        <div>
-          <dt>{metric.label}</dt>
-          <dd className="mt-1 font-black text-[#1f7a71]">
-            {metric.value}
-          </dd>
-        </div>
-        <div>
-          <dt>Players</dt>
-          <dd className="mt-1 font-black text-[#24160d]">
-            {game.playerX.displayName} vs{" "}
-            {game.playerO?.displayName ?? "Waiting"}
-          </dd>
-        </div>
-        <div>
-          <dt>You</dt>
-          <dd className="mt-1 font-black text-[#24160d]">
-            {session
-              ? `${session.displayName} (${markLabel(session.playerMark)})`
-              : "Preview"}
-          </dd>
-        </div>
-      </dl>
+      <div className="mt-5 grid gap-4 border-t-2 border-[#5f351c]/20 pt-4">
+        <dl className="grid gap-3 text-sm text-[#5f351c] sm:grid-cols-3">
+          <div className="min-w-0">
+            <dt>Status</dt>
+            <dd className="mt-1 font-black text-[#24160d]">
+              {statusLabel(game.status)}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt>Round</dt>
+            <dd className="mt-1 font-black text-[#24160d]">
+              {game.roundNumber}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt>{metric.label}</dt>
+            <dd className="mt-1 font-black text-[#1f7a71]">
+              {metric.value}
+            </dd>
+          </div>
+        </dl>
+
+        <dl className="grid gap-3 rounded-lg border-2 border-[#5f351c]/20 bg-[#f3d29d]/35 p-3 text-center text-sm text-[#5f351c] sm:grid-cols-3">
+          <div className="min-w-0">
+            <dt className="truncate" title={game.playerX.displayName}>
+              {game.playerX.displayName}
+            </dt>
+            <dd className="mt-1 text-2xl font-black text-[#24160d]">
+              {game.score.xWins}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt>Draws</dt>
+            <dd className="mt-1 text-2xl font-black text-[#24160d]">
+              {game.score.draws}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="truncate" title={playerOName}>
+              {playerOName}
+            </dt>
+            <dd className="mt-1 text-2xl font-black text-[#24160d]">
+              {game.score.oWins}
+            </dd>
+          </div>
+        </dl>
+      </div>
     </section>
   );
 }

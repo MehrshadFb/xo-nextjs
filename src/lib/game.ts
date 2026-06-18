@@ -10,6 +10,17 @@ export type Player = {
   role: string;
 };
 
+export type MatchScore = {
+  xWins: number;
+  oWins: number;
+  draws: number;
+};
+
+export type RematchState = {
+  xRequested: boolean;
+  oRequested: boolean;
+};
+
 export type GameState = {
   gameId: string;
   joinCode: string;
@@ -21,6 +32,9 @@ export type GameState = {
   winner: Mark;
   isDraw: boolean;
   version: number;
+  score: MatchScore;
+  rematch: RematchState;
+  roundNumber: number;
 };
 
 export type GameStreamEvent = {
@@ -49,6 +63,16 @@ export const previewGame: GameState = {
   winner: "empty",
   isDraw: false,
   version: 5,
+  score: {
+    xWins: 1,
+    oWins: 0,
+    draws: 1,
+  },
+  rematch: {
+    xRequested: false,
+    oRequested: false,
+  },
+  roundNumber: 2,
 };
 
 const winningLines = [

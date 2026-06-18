@@ -80,4 +80,14 @@ export function makeMove(
   );
 }
 
+export function requestRematch(gameId: string, playerToken: string) {
+  return requestJson<GameStateResponse>(
+    `/api/games/${encodeURIComponent(gameId)}/rematch`,
+    {
+      method: "POST",
+      body: JSON.stringify({ playerToken }),
+    },
+  );
+}
+
 export type { GameStreamEvent };

@@ -21,6 +21,17 @@ type ProtoPlayer = {
   mark?: unknown;
 };
 
+type ProtoMatchScore = {
+  xWins?: number | string;
+  oWins?: number | string;
+  draws?: number | string;
+};
+
+type ProtoRematchState = {
+  xRequested?: boolean;
+  oRequested?: boolean;
+};
+
 type ProtoGameState = {
   gameId?: string;
   joinCode?: string;
@@ -32,6 +43,9 @@ type ProtoGameState = {
   winner?: unknown;
   isDraw?: boolean;
   version?: number | string;
+  score?: ProtoMatchScore | null;
+  rematch?: ProtoRematchState | null;
+  roundNumber?: number | string;
 };
 
 type StartGameProtoResponse = {
@@ -245,13 +259,20 @@ function mapGameState(state: ProtoGameState | undefined): GameState {
     board: mapBoard(state.board),
     playerX,
     playerO: mapPlayer(state.playerO, "o", "Player O", "Opponent"),
-    nextTurn:
-      mapMark(state.nextTurn) === "o"
-        ? "o"
-        : "x",
+    nextTurn: mapMark(state.nextTurn) === "o" ? "o" : "x",
     winner: mapMark(state.winner),
     isDraw: Boolean(state.isDraw),
     version: mapVersion(state.version),
+    score: {
+      xWins: mapVersion(state.score?.xWins),
+      oWins: mapVersion(state.score?.oWins),
+      draws: mapVersion(state.score?.draws),
+    },
+    rematch: {
+      xRequested: Boolean(state.rematch?.xRequested),
+      oRequested: Boolean(state.rematch?.oRequested),
+    },
+    roundNumber: mapVersion(state.roundNumber) || 1,
   };
 }
 
@@ -337,6 +358,19 @@ export async function makeMove(
     gameClient(),
     "makeMove",
     { gameId, playerToken, cellIndex },
+  );
+
+  return mapGameState(response.state);
+}
+
+export async function requestRematch(
+  gameId: string,
+  playerToken: string,
+): Promise<GameState> {
+  const response = await callUnary<GameStateProtoResponse>(
+    gameClient(),
+    "requestRematch",
+    { gameId, playerToken },
   );
 
   return mapGameState(response.state);
