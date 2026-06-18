@@ -21,7 +21,7 @@ const expectedServices = [
   },
   {
     file: "game",
-    rpcs: ["GetState", "MakeMove", "WatchGame"],
+    rpcs: ["GetState", "MakeMove", "RequestRematch", "WatchGame"],
     service: "GameService",
   },
   {
@@ -45,8 +45,28 @@ const expectedMessages = [
       ["Mark", "winner", 8],
       ["bool", "is_draw", 9],
       ["int64", "version", 10],
+      ["MatchScore", "score", 11],
+      ["RematchState", "rematch", 12],
+      ["int64", "round_number", 13],
     ],
     message: "GameState",
+  },
+  {
+    file: "common",
+    fields: [
+      ["int64", "x_wins", 1],
+      ["int64", "o_wins", 2],
+      ["int64", "draws", 3],
+    ],
+    message: "MatchScore",
+  },
+  {
+    file: "common",
+    fields: [
+      ["bool", "x_requested", 1],
+      ["bool", "o_requested", 2],
+    ],
+    message: "RematchState",
   },
   {
     file: "lobby",
@@ -90,6 +110,19 @@ const expectedMessages = [
     file: "game",
     fields: [["GameState", "state", 1]],
     message: "MakeMoveResponse",
+  },
+  {
+    file: "game",
+    fields: [
+      ["string", "game_id", 1],
+      ["string", "player_token", 2],
+    ],
+    message: "RequestRematchRequest",
+  },
+  {
+    file: "game",
+    fields: [["GameState", "state", 1]],
+    message: "RequestRematchResponse",
   },
   {
     file: "game",
@@ -140,6 +173,19 @@ const expectedEnumValues = [
     enumName: "HealthStatus",
     file: "health",
     values: ["HEALTH_STATUS_SERVING", "HEALTH_STATUS_NOT_SERVING"],
+  },
+  {
+    enumName: "GameEventType",
+    file: "game",
+    values: [
+      "GAME_EVENT_TYPE_STATE_SNAPSHOT",
+      "GAME_EVENT_TYPE_PLAYER_JOINED",
+      "GAME_EVENT_TYPE_MOVE_MADE",
+      "GAME_EVENT_TYPE_GAME_OVER",
+      "GAME_EVENT_TYPE_PLAYER_LEFT",
+      "GAME_EVENT_TYPE_REMATCH_REQUESTED",
+      "GAME_EVENT_TYPE_ROUND_STARTED",
+    ],
   },
 ];
 
