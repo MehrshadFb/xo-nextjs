@@ -350,7 +350,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
       }
 
       if (hasRequestedRematch) {
-        return "Waiting for opponent.";
+        return "Waiting for opponent to accept.";
       }
 
       if (opponentRequestedRematch) {
@@ -426,7 +426,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
             {isRequestingRematch
               ? "Requesting..."
               : hasRequestedRematch
-                ? "Waiting for opponent"
+                ? "Waiting…"
                 : opponentRequestedRematch
                   ? "Accept rematch"
                   : "Play again"}
