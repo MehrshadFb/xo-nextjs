@@ -265,6 +265,11 @@ export function GameRoom({ roomCode }: GameRoomProps) {
     game.nextTurn === session?.playerMark &&
     !isMoving;
   const hasRequestedRematch = rematchRequestedBySession(game, session);
+  const opponentRequestedRematch =
+    Boolean(session) &&
+    (session?.playerMark === "x"
+      ? game.rematch.oRequested
+      : game.rematch.xRequested);
   const canRequestRematch =
     Boolean(session) &&
     game.status === "finished" &&
@@ -348,6 +353,10 @@ export function GameRoom({ roomCode }: GameRoomProps) {
         return "Waiting for opponent.";
       }
 
+      if (opponentRequestedRematch) {
+        return "Opponent wants a rematch.";
+      }
+
       return outcomeMessage(game, session);
     }
 
@@ -418,7 +427,9 @@ export function GameRoom({ roomCode }: GameRoomProps) {
               ? "Requesting..."
               : hasRequestedRematch
                 ? "Waiting for opponent"
-                : "Play again"}
+                : opponentRequestedRematch
+                  ? "Accept rematch"
+                  : "Play again"}
           </button>
         </div>
       ) : null}
