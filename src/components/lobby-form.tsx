@@ -20,7 +20,7 @@ export function LobbyForm() {
     setError("");
 
     const code = joinCode.trim().replace(/\s+/g, "-").toUpperCase();
-    const name = displayName.trim();
+    const name = displayName.trim().toUpperCase();
 
     if (!name) {
       setError("Enter your name.");
@@ -96,7 +96,7 @@ export function LobbyForm() {
             Join code
             <input
               value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
+              onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
               name="joinCode"
               type="text"
               autoComplete="off"
@@ -110,7 +110,7 @@ export function LobbyForm() {
           Your name
           <input
             value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
+            onChange={(event) => setDisplayName(event.target.value.toUpperCase())}
             name="displayName"
             type="text"
             autoComplete="nickname"
