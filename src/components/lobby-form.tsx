@@ -14,6 +14,7 @@ export function LobbyForm() {
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isWaking, setIsWaking] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,12 +34,13 @@ export function LobbyForm() {
     }
 
     setIsSubmitting(true);
+    const onRetry = () => setIsWaking(true);
 
     try {
       const result =
         mode === "create"
-          ? await createGame(name)
-          : await joinGame(code, name);
+          ? await createGame(name, onRetry)
+          : await joinGame(code, name, onRetry);
       const session = createGameSession({
         state: result.state,
         displayName: name,
@@ -56,6 +58,7 @@ export function LobbyForm() {
       );
     } finally {
       setIsSubmitting(false);
+      setIsWaking(false);
     }
   }
 
@@ -96,7 +99,9 @@ export function LobbyForm() {
             Join code
             <input
               value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+              onChange={(event) =>
+                setJoinCode(event.target.value.toUpperCase())
+              }
               name="joinCode"
               type="text"
               autoComplete="off"
@@ -110,7 +115,9 @@ export function LobbyForm() {
           Your name
           <input
             value={displayName}
-            onChange={(event) => setDisplayName(event.target.value.toUpperCase())}
+            onChange={(event) =>
+              setDisplayName(event.target.value.toUpperCase())
+            }
             name="displayName"
             type="text"
             autoComplete="nickname"
@@ -125,11 +132,13 @@ export function LobbyForm() {
         disabled={isSubmitting}
         className="mt-5 h-12 w-full rounded-lg border-2 border-[#5f351c] bg-[#5f351c] px-4 text-base font-black text-[#fff6df] transition hover:bg-[#4c2915]"
       >
-        {isSubmitting
-          ? "Starting..."
-          : mode === "create"
-            ? "Create game"
-            : "Join game"}
+        {isWaking
+          ? "Waking server..."
+          : isSubmitting
+            ? "Starting..."
+            : mode === "create"
+              ? "Create game"
+              : "Join game"}
       </button>
 
       {error ? (

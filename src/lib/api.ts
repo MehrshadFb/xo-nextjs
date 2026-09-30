@@ -1,3 +1,4 @@
+import { ApiError, isServerWaking } from "@/lib/errors";
 import type { GameState, GameStreamEvent, PlayerMark } from "@/lib/game";
 
 export type StartGameResponse = {
@@ -25,24 +26,58 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as ApiErrorBody;
-    throw new Error(body.error ?? "Request failed");
+    throw new ApiError(body.error ?? "Request failed", response.status);
   }
 
   return response.json() as Promise<T>;
 }
 
-export function createGame(displayName: string) {
-  return requestJson<StartGameResponse>("/api/lobby/create", {
-    method: "POST",
-    body: JSON.stringify({ displayName }),
-  });
+const RETRY_DELAYS_MS = [1000, 2000, 4000];
+
+async function withWakeRetry<T>(
+  request: () => Promise<T>,
+  onRetry?: () => void,
+): Promise<T> {
+  for (const delay of RETRY_DELAYS_MS) {
+    try {
+      return await request();
+    } catch (error) {
+      if (!isServerWaking(error)) {
+        throw error;
+      }
+
+      onRetry?.();
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  return request();
 }
 
-export function joinGame(joinCode: string, displayName: string) {
-  return requestJson<StartGameResponse>("/api/lobby/join", {
-    method: "POST",
-    body: JSON.stringify({ joinCode, displayName }),
-  });
+export function createGame(displayName: string, onRetry?: () => void) {
+  return withWakeRetry(
+    () =>
+      requestJson<StartGameResponse>("/api/lobby/create", {
+        method: "POST",
+        body: JSON.stringify({ displayName }),
+      }),
+    onRetry,
+  );
+}
+
+export function joinGame(
+  joinCode: string,
+  displayName: string,
+  onRetry?: () => void,
+) {
+  return withWakeRetry(
+    () =>
+      requestJson<StartGameResponse>("/api/lobby/join", {
+        method: "POST",
+        body: JSON.stringify({ joinCode, displayName }),
+      }),
+    onRetry,
+  );
 }
 
 export function getGameState(gameId: string, playerToken: string) {
