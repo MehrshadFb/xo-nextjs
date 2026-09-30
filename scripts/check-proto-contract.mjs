@@ -131,6 +131,7 @@ const expectedMessages = [
       ["int64", "event_id", 2],
       ["GameState", "state", 3],
       ["string", "message", 6],
+      ["Mark", "player_mark", 7],
     ],
     message: "GameEvent",
   },
@@ -185,6 +186,7 @@ const expectedEnumValues = [
       "GAME_EVENT_TYPE_PLAYER_LEFT",
       "GAME_EVENT_TYPE_REMATCH_REQUESTED",
       "GAME_EVENT_TYPE_ROUND_STARTED",
+      "GAME_EVENT_TYPE_PLAYER_RETURNED",
     ],
   },
 ];

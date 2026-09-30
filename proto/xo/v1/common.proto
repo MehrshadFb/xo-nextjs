@@ -50,8 +50,8 @@ message GameState {
   Mark winner = 8; // X, O, or EMPTY when none
   bool is_draw = 9;
   int64 version = 10; // increments every state change
-  MatchScore score = 11;
-  RematchState rematch = 12;
+  MatchScore score = 11; // score of the match
+  RematchState rematch = 12; // rematch state of the match
   int64 round_number = 13;
 }
 

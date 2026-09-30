@@ -72,6 +72,7 @@ type ProtoGameEvent = {
   eventId?: number | string;
   state?: ProtoGameState;
   message?: string;
+  playerMark?: string;
 };
 
 type UnaryMethod = (
@@ -282,6 +283,7 @@ function mapGameEvent(event: ProtoGameEvent): GameStreamEvent {
     eventId: mapVersion(event.eventId),
     state: mapGameState(event.state),
     message: event.message ?? "",
+    playerMark: mapMark(event.playerMark),
   };
 }
 

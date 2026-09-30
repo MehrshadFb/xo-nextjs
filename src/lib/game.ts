@@ -42,6 +42,7 @@ export type GameStreamEvent = {
   eventId: number;
   state: GameState;
   message: string;
+  playerMark: Mark;
 };
 
 export const previewGame: GameState = {

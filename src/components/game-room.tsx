@@ -154,6 +154,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
   const [isMoving, setIsMoving] = useState(false);
   const [isRequestingRematch, setIsRequestingRematch] = useState(false);
   const [isLive, setIsLive] = useState(false);
+  const [isOpponentAway, setIsOpponentAway] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
@@ -220,6 +221,14 @@ export function GameRoom({ roomCode }: GameRoomProps) {
       setRemoteGame(payload.state);
       setError("");
       setIsLive(true);
+
+      if (payload.playerMark !== session?.playerMark) {
+        if (payload.type === "GAME_EVENT_TYPE_PLAYER_LEFT") {
+          setIsOpponentAway(true);
+        } else if (payload.type === "GAME_EVENT_TYPE_PLAYER_RETURNED") {
+          setIsOpponentAway(false);
+        }
+      }
     }
 
     function handleStreamError(event: MessageEvent<string>) {
@@ -252,6 +261,7 @@ export function GameRoom({ roomCode }: GameRoomProps) {
       source.removeEventListener("error", handleConnectionError);
       source.close();
       setIsLive(false);
+      setIsOpponentAway(false);
     };
   }, [roomCode, retryCount, session]);
 
@@ -342,6 +352,10 @@ export function GameRoom({ roomCode }: GameRoomProps) {
 
     if (game.status === "waiting") {
       return "Waiting for the second player.";
+    }
+
+    if (isOpponentAway) {
+      return "Opponent left. Waiting for them to come back.";
     }
 
     if (game.status === "finished") {
